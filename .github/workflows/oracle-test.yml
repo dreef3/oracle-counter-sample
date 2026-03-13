@@ -111,6 +111,17 @@ jobs:
       - name: Run parallel Spring Boot tests
         run: mvn -f java/pom.xml -B test
 
+      - name: Generate HTML test report
+        if: always()
+        run: mvn -f java/pom.xml -B site -DskipTests
+
+      - name: Upload HTML test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-report
+          path: java/target/site/
+
       # ── 10. Always dump Oracle container logs on failure ───────────────────
       - name: Dump Oracle container logs on failure
         if: failure()
