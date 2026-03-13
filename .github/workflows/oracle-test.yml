@@ -35,17 +35,16 @@ jobs:
             gvenzl/oracle-free:slim-faststart
 
       # ── 3. Wait until Oracle is accepting connections ───────────────────────
-      # gvenzl/oracle-free ships with a HEALTHCHECK; we poll Docker's own
-      # health status rather than scraping script output.
+      # gvenzl/oracle-free:slim-faststart has no Docker HEALTHCHECK, so we
+      # grep the container logs for the banner the entrypoint prints when the
+      # DB is fully open and accepting connections.
       - name: Wait for Oracle to be healthy
         run: |
           echo "Waiting for Oracle Database to become ready..."
           MAX_TRIES=60
           for i in $(seq 1 $MAX_TRIES); do
-            HEALTH=$(docker inspect --format='{{.State.Health.Status}}' oracle 2>/dev/null || echo "starting")
-            echo "  Attempt $i/$MAX_TRIES – status: $HEALTH"
-            if [ "$HEALTH" = "healthy" ]; then
-              echo "Oracle is ready."
+            if docker logs oracle 2>&1 | grep -q "DATABASE IS READY TO USE"; then
+              echo "Oracle is ready after $i attempts."
               break
             fi
             if [ "$i" -eq "$MAX_TRIES" ]; then
@@ -53,6 +52,7 @@ jobs:
               docker logs oracle
               exit 1
             fi
+            echo "  Attempt $i/$MAX_TRIES – not ready yet, sleeping 5 s..."
             sleep 5
           done
 
