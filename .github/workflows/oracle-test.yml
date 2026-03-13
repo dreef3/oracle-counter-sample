@@ -100,7 +100,18 @@ jobs:
             system/${{ env.ORACLE_PASSWORD }}@//${{ env.ORACLE_HOST }}:${{ env.ORACLE_PORT }}/${{ env.ORACLE_PDB }} \
             @/tmp/tests/test_sequencing.sql"
 
-      # ── 9. Always dump Oracle container logs on failure ────────────────────
+      # ── 9. Run Spring Boot parallel tests (12 concurrent threads) ────────
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run parallel Spring Boot tests
+        run: mvn -f java/pom.xml -B test
+
+      # ── 10. Always dump Oracle container logs on failure ───────────────────
       - name: Dump Oracle container logs on failure
         if: failure()
         run: docker logs oracle
